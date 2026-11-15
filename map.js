@@ -19,6 +19,7 @@ const map = new mapboxgl.Map({
 console.log('Mapbox GL JS Loaded:', mapboxgl);
 
 map.on('load', async () => {
+    const svg = d3.select('#map').select('svg');
     map.addSource('boston_route', {
         type: 'geojson',
         data: 'https://bostonopendata-boston.opendata.arcgis.com/datasets/boston::existing-bike-network-2022.geojson',
@@ -64,9 +65,42 @@ map.on('load', async () => {
 
     console.log('Loaded JSON Data:', jsonData);
     let stations = jsonData.data.stations;
+    // Append circles to the SVG for each station
+    const circles = svg
+    .selectAll('circle')
+    .data(stations)
+    .enter()
+    .append('circle')
+    .attr('r', 5) // Radius of the circle
+    .attr('fill', 'steelblue') // Circle fill color
+    .attr('stroke', 'white') // Circle border color
+    .attr('stroke-width', 1) // Circle border thickness
+    .attr('opacity', 0.8); // Circle opacity
     console.log('Stations Array:', stations);
+
+    // Function to update circle positions when the map moves/zooms
+    function updatePositions() {
+    circles
+      .attr('cx', (d) => getCoords(d).cx)
+      .attr('cy', (d) => getCoords(d).cy);
+    }
     
+    // Initial position update when map loads
+    updatePositions();
+
+    // Reposition markers on map interactions
+    map.on('move', updatePositions);
+    map.on('zoom', updatePositions);
+    map.on('resize', updatePositions);
+    map.on('moveend', updatePositions);
+
     } catch (error) {
     console.error('Error loading JSON:', error);
     }
 });
+
+function getCoords(station) {
+    const point = new mapboxgl.LngLat(+station.lon, +station.lat);
+    const { x, y } = map.project(point);
+    return { cx: x, cy: y };
+  }
