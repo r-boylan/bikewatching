@@ -65,6 +65,13 @@ map.on('load', async () => {
 
     console.log('Loaded JSON Data:', jsonData);
     let stations = jsonData.data.stations;
+
+    // Load Bluebikes traffic data
+    const trips = await d3.csv(
+    'https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv'
+    );
+    console.log('Loaded Trips:', trips);
+
     // Append circles to the SVG for each station
     const circles = svg
     .selectAll('circle')
@@ -76,6 +83,7 @@ map.on('load', async () => {
     .attr('stroke', 'white') // Circle border color
     .attr('stroke-width', 1) // Circle border thickness
     .attr('opacity', 0.8); // Circle opacity
+
     console.log('Stations Array:', stations);
 
     // Function to update circle positions when the map moves/zooms
