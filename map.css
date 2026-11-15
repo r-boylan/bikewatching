@@ -29,3 +29,22 @@ body {
   stroke: white;
   pointer-events: auto;
 }
+
+header {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+}
+
+label {
+  margin-left: auto;
+}
+
+time,
+em {
+  display: block;
+}
+
+em {
+  color: gray;
+}
