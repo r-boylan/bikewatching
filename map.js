@@ -88,6 +88,11 @@ map.on('load', async () => {
       .domain([0, d3.max(stations, (d) => d.totalTraffic)])
       .range([0, 25]);
 
+    let stationFlow = d3
+      .scaleQuantize()
+      .domain([0, 1])
+      .range([0, 0.5, 1]);
+
     // Append circles to the SVG for each station
     const circles = svg
     .selectAll('circle')
@@ -99,6 +104,9 @@ map.on('load', async () => {
     .attr('stroke', 'white') // Circle border color
     .attr('stroke-width', 1) // Circle border thickness
     .attr('opacity', 0.8) // Circle opacity
+    .style('--departure-ratio', (d) =>
+        stationFlow(d.departures / d.totalTraffic),
+      )
     .each(function (d) {
         // Add <title> for browser tooltips
         d3.select(this)
@@ -161,7 +169,10 @@ map.on('load', async () => {
       circles
         .data(filteredStations, (d) => d.short_name)
         .join('circle')
-        .attr('r', (d) => radiusScale(d.totalTraffic));
+        .attr('r', (d) => radiusScale(d.totalTraffic))
+        .style('--departure-ratio', (d) =>
+            stationFlow(d.departures / d.totalTraffic),
+          );
     }
 
     timeSlider.addEventListener('input', updateTimeDisplay);
