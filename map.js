@@ -96,13 +96,19 @@ map.on('load', async () => {
 
     console.log('Stations with traffic:', stations);
 
+    // Scale circle radius based on total traffic
+    const radiusScale = d3
+      .scaleSqrt()
+      .domain([0, d3.max(stations, (d) => d.totalTraffic)])
+      .range([0, 25]);
+
     // Append circles to the SVG for each station
     const circles = svg
     .selectAll('circle')
     .data(stations)
     .enter()
     .append('circle')
-    .attr('r', 5) // Radius of the circle
+    .attr('r', (d) => radiusScale(d.totalTraffic)) // Radius of the circle
     .attr('fill', 'steelblue') // Circle fill color
     .attr('stroke', 'white') // Circle border color
     .attr('stroke-width', 1) // Circle border thickness
