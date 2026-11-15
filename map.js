@@ -65,9 +65,14 @@ map.on('load', async () => {
 
     console.log('Loaded JSON Data:', jsonData);
     // Load Bluebikes traffic data
-    const trips = await d3.csv(
-    'https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv'
-    );
+    let trips = await d3.csv(
+        'https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv',
+        (trip) => {
+          trip.started_at = new Date(trip.started_at);
+          trip.ended_at = new Date(trip.ended_at);
+          return trip;
+        },
+      );
     console.log('Loaded Trips:', trips);
 
     let stations = computeStationTraffic(
@@ -140,6 +145,20 @@ map.on('load', async () => {
       }
     }
 
+    function updateScatterPlot(timeFilter) {
+      // Get only the trips that match the selected time filter
+      const filteredTrips = filterTripsbyTime(trips, timeFilter);
+
+      // Recompute station traffic based on the filtered trips
+      const filteredStations = computeStationTraffic(stations, filteredTrips);
+
+      // Update the scatterplot by adjusting the radius of circles
+      circles
+        .data(filteredStations)
+        .join('circle')
+        .attr('r', (d) => radiusScale(d.totalTraffic));
+    }
+
     timeSlider.addEventListener('input', updateTimeDisplay);
     updateTimeDisplay();
 
@@ -182,4 +201,24 @@ function computeStationTraffic(stations, trips) {
     station.totalTraffic = station.arrivals + station.departures;
     return station;
   });
+}
+
+function minutesSinceMidnight(date) {
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function filterTripsbyTime(trips, timeFilter) {
+  return timeFilter === -1
+    ? trips // If no filter is applied (-1), return all trips
+    : trips.filter((trip) => {
+        // Convert trip start and end times to minutes since midnight
+        const startedMinutes = minutesSinceMidnight(trip.started_at);
+        const endedMinutes = minutesSinceMidnight(trip.ended_at);
+
+        // Include trips that started or ended within 60 minutes of the selected time
+        return (
+          Math.abs(startedMinutes - timeFilter) <= 60 ||
+          Math.abs(endedMinutes - timeFilter) <= 60
+        );
+      });
 }
