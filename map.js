@@ -64,37 +64,18 @@ map.on('load', async () => {
     jsonData = await d3.json(jsonurl);
 
     console.log('Loaded JSON Data:', jsonData);
-    let stations = jsonData.data.stations;
-
     // Load Bluebikes traffic data
     const trips = await d3.csv(
     'https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv'
     );
     console.log('Loaded Trips:', trips);
-    
-    // Calculate departures and arrivals for each station
-    const departures = d3.rollup(
-      trips,
-      (v) => v.length,
-      (d) => d.start_station_id,
-    );
 
-    const arrivals = d3.rollup(
-      trips,
-      (v) => v.length,
-      (d) => d.end_station_id,
-    );
-
-    // Add traffic data to each station
-    stations = stations.map((station) => {
-      let id = station.short_name;
-      station.arrivals = arrivals.get(id) ?? 0;
-      station.departures = departures.get(id) ?? 0;
-      station.totalTraffic = station.arrivals + station.departures;
-      return station;
-    });
-
-    console.log('Stations with traffic:', stations);
+    let stations = computeStationTraffic(
+        jsonData.data.stations,
+        trips
+      );
+  
+      console.log('Stations with traffic:', stations);
 
     // Scale circle radius based on total traffic
     const radiusScale = d3
@@ -176,4 +157,29 @@ function getCoords(station) {
 function formatTime(minutes) {
   const date = new Date(0, 0, 0, 0, minutes);
   return date.toLocaleString('en-US', { timeStyle: 'short' });
+}
+
+function computeStationTraffic(stations, trips) {
+  // Compute departures
+  const departures = d3.rollup(
+    trips,
+    (v) => v.length,
+    (d) => d.start_station_id,
+  );
+
+  // Compute arrivals
+  const arrivals = d3.rollup(
+    trips,
+    (v) => v.length,
+    (d) => d.end_station_id,
+  );
+
+  // Update each station
+  return stations.map((station) => {
+    let id = station.short_name;
+    station.arrivals = arrivals.get(id) ?? 0;
+    station.departures = departures.get(id) ?? 0;
+    station.totalTraffic = station.arrivals + station.departures;
+    return station;
+  });
 }
